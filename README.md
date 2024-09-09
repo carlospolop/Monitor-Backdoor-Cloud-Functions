@@ -4,6 +4,8 @@ If you have read and write access over a GCP Storage bucket used to store the co
 
 This script is a probe of concept of the previous attack that will monitor a bucket and submit a zip file with some python code that will print the Access Token from the metadata whenever the code of the function gets updated.
 
+Find more information in https://cloud.hacktricks.xyz/pentesting-cloud/gcp-security/gcp-privilege-escalation/gcp-storage-privesc#cloud-functions
+
 ```bash
 # Installation
 python3 -m pip install -r requirements.txt
