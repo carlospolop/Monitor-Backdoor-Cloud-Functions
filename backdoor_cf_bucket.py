@@ -12,6 +12,7 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 bucket_name = sys.argv[1]
+print("Checking bucket:", bucket_name)
 
 # Initialize the GCS client
 client = storage.Client()
@@ -45,10 +46,11 @@ def handle_zip_file(zip_name, local_folder_root):
 
 
 def monitor_bucket():
-    """Monitor the bucket for changes every `interval` seconds."""
+    """Monitor the bucket for changes."""
     print("Monitoring bucket for changes...")
     local_folder_root = './backdoor'
     last_state = list_blobs()
+    processed_files = {}
     print(f"Initial state:")
     for file_name, updated in last_state.items():
         print(f"File: {file_name}, Updated: {updated}")
@@ -59,19 +61,36 @@ def monitor_bucket():
 
         # Check for added or updated files
         for file_name, updated in current_state.items():
-            if file_name not in last_state and file_name.endswith('.zip'):
-                modified_files.append(file_name)
-
+            if file_name.endswith('.zip'):
+                last_updated = last_state.get(file_name)
+                # File is new or updated
+                if (file_name not in last_state) or (updated != last_updated):
+                    # Check if we have already processed this update
+                    processed_updated = processed_files.get(file_name)
+                    if (processed_updated is None) or (updated > processed_updated):
+                        # If last_updated exists, calculate time difference
+                        if last_updated:
+                            time_diff = (updated - last_updated).total_seconds()
+                            if time_diff <= 20:
+                                # Update processed_files but don't upload
+                                processed_files[file_name] = updated
+                                print(f"File {file_name} updated within 20 seconds, skipping upload.")
+                                continue
+                        # Proceed to handle the file
+                        modified_files.append(file_name)
         # Handle added or updated ZIP files
         if modified_files:
             print("Change detected in bucket!")
             for file in modified_files:
                 print(f"Updated file: {file}")
-                if file.endswith('.zip'):
-                    handle_zip_file(file, local_folder_root)
+                handle_zip_file(file, local_folder_root)
+                # Update the processed_files with the latest updated time
+                processed_files[file] = current_state[file_name]
 
         # Update last known state
-        last_state = current_state
+        last_state = current_state.copy()
+
+        time.sleep(5)  # Add a sleep interval to prevent tight looping
 
 if __name__ == '__main__':
     monitor_bucket()
