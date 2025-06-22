@@ -10,6 +10,10 @@ Find more information in https://cloud.hacktricks.xyz/pentesting-cloud/gcp-secur
 # Installation
 python3 -m pip install -r requirements.txt
 
+# To allow the script to use your gcloud credentials you need to execute first:
+gcloud auth application-default login
+
+# Execute the monitoring
 python3 backdoor_cf_bucket.py <bucket-name>
 
 #e.g.
